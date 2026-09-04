@@ -3,27 +3,24 @@ import axios from "axios";
 export default async function handler(req, res) {
   const { category = "discipline" } = req.body;
 
+  // Prompt for Gemini
   const prompt = `Write a short tweet about ${category}, punchy and under 280 characters.`;
 
   try {
+    // Call Gemini API
     const response = await axios.post(
-      "https://api.groq.com/openai/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
-        model: "mixtral-8x7b",
-        messages: [{ role: "user", content: prompt }],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        contents: [{ parts: [{ text: prompt }] }],
       }
     );
 
-    const tweet = response.data.choices[0].message.content;
+    // Extract tweet text
+    const tweet = response.data.candidates[0].content.parts[0].text;
+
     res.status(200).json({ tweet });
   } catch (error) {
-    console.error("Groq API error:", error.response?.data || error.message);
+    console.error("Gemini API error:", error.response?.data || error.message);
     res.status(500).json({ tweet: "Error generating tweet." });
   }
 }
